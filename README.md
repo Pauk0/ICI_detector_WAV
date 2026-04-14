@@ -1,6 +1,6 @@
 # ICI_Detector_WAV
 
-## WAV version of the ICI detector developed by [Richard Dréo](https://github.com/richardDreo).
+## WAV version of the ICI detector developed by [Richard Dréo](https://github.com/richardDreo/ICI_detector_demo).
 
 This tool is designed for detecting baleen whale Inter-Click Intervals (ICI) in underwater acoustic data using WAV audiofiles. It is specifically optimized for whales emitting stereotyped songs with regular intervals, such as Fin whales and Blue whales.
 
@@ -41,13 +41,21 @@ source .venv/bin/activate
 uv pip install osekit==1.0.0
 ```
 
-### Data Requirements
+## Usage
+
+Each Jupyter notebook focuses on a specific species (fin whale, Antarctic blue whale, or Madagascan pygmy blue whale) based on the characteristics of its calls. 
+The notebook name indicates the species being studied and, if necessary, the ICI, for example `fw10_detection.ipynb` for fin whale calls spaced 10 seconds apart
+or `mpbw_detection.ipynb` for Madagascan pygmy blue whale calls. 
+
+## Data Requirements
 
 **Audio Format**
-* Format: WAV
-* Naming Convention: The detector expects a specific timestamp pattern in the filename ie `YYYY_MM_DD_HH_MM_SS_000000.wav`
-  * Ex: `2021_07_27_00_00_00_000000.wav` for a file starting on July 27, 2021, at midnight.
+* **Format**: WAV
+* **Naming convention**: The detector expects the filename to include a timestamp format indicating the date and time. 
+In this code, the format used is `YYYY_MM_DD_HH_MM_SS_000000.wav` (for example: `2021_07_27_00_00_00_000000.wav` for a file starting on July 27, 2021, at midnight), but you might modify it to suit your dataset. 
 
-## License
+## Parameters
 
-This project is licensed under the **MIT License**. 
+An analysis of the various parameters is currently underway.
+Preliminary results indicate that the valley parameters (`valley_min` and `valley_max`) and the `window` parameter have little impact on detections.
+In contrast, the frequency parameters (`f_min` and `f_max`), the peak parameters (`peak_min` and `peak_max`), and the threshold parameter do have an impact, which is consistent with the physical nature of the signals under study. 
