@@ -56,6 +56,6 @@ In this code, the format used is `YYYY_MM_DD_HH_MM_SS_000000.wav` (for example: 
 
 ## Parameters
 
-An analysis of the various parameters is currently underway.
+An analysis of the impact of each of these parameters is currently underway.
 Preliminary results indicate that the valley parameters (`valley_min` and `valley_max`) and the `window` parameter have little impact on detections.
 In contrast, the frequency parameters (`f_min` and `f_max`), the peak parameters (`peak_min` and `peak_max`), and the threshold parameter do have an impact, which is consistent with the physical nature of the signals under study. 

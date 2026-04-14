@@ -21,22 +21,23 @@ def compute_longterm_cepstro(audio_files, begin_date, end_date,FFT_SIZE, F_MIN, 
     all_spectrograms = []
 
     OVERLAP = 0.95
+    noverlap = int(FFT_SIZE * OVERLAP)
+    demBounds = [F_MIN, F_MAX]
+    integration = 5
+    additional_freq = 0
 
     for d in pd.date_range(begin_date, end_date - Timedelta(days=1), freq='D'):
+        print(f"Day processed = {d}")
         audio_data_day = AudioData.from_files(
             files=audio_files,
             begin= d,
             end= d + pd.Timedelta(days=1)
         )
 
-        noverlap = int(FFT_SIZE * OVERLAP)
-        additional_freq = 0
         sampling_rate = audio_data_day.sample_rate
-        demBounds = [F_MIN, F_MAX]
-        integration = 5
 
         if audio_data_day.is_empty:
-            print("no data")
+            print("Error: no data")
             break
         audio_data_day_value = audio_data_day.get_value()
 
@@ -45,13 +46,14 @@ def compute_longterm_cepstro(audio_files, begin_date, end_date,FFT_SIZE, F_MIN, 
                 audio_data_day_value, sampling_rate = get_demodulated_samples(audio_data_day_value, sampling_rate, demBounds)
                 additional_freq = demBounds[0]
             except Exception as e:
-                print(e)
+                print(f"Error: {e}")
 
         # Ensure the input signal is long enough for the FFT window
         if len(audio_data_day_value) < int(FFT_SIZE):
             audio_data_day_value = np.pad(audio_data_day_value, (0, int(FFT_SIZE) - len(audio_data_day_value)), mode='constant')
 
-        frequencies, times, spectrogram = sp.stft(audio_data_day_value, fs=sampling_rate, nperseg=int(FFT_SIZE), noverlap=noverlap)
+        nperseg_int = int(FFT_SIZE)
+        frequencies, times, spectrogram = sp.stft(audio_data_day_value, fs=sampling_rate, nperseg=nperseg_int, noverlap=noverlap)
         frequencies += additional_freq
 
         times = pd.to_datetime(d) + pd.to_timedelta(times, unit='s')

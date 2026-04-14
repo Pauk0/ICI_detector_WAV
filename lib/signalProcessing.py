@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import scipy.signal as sp
+from scipy.signal import decimate, resample
 
 def integrate_tf_representation(t, R: np.ndarray, i: int) -> tuple:
     """
@@ -24,12 +25,12 @@ def integrate_tf_representation(t, R: np.ndarray, i: int) -> tuple:
 
         R_mean_list.append(np.nanmean(R_block, axis=1))
 
-        # moyenne temporelle
+        # Time average
         t_block_ns = t_block.astype("datetime64[ns]").astype("int64")
         t_mean_ns = np.nanmean(t_block_ns, axis=0)
         t_mean_list.append(t_mean_ns.astype("datetime64[ns]"))
 
-    R_mean = np.vstack(R_mean_list).T  # on remet dans la forme (freq x temps)
+    R_mean = np.vstack(R_mean_list).T  # we convert it back to the form (frequency × time)
     t_mean = np.array(t_mean_list)
 
     return t_mean, R_mean
@@ -59,10 +60,9 @@ def get_cepstro(t: np.ndarray, f: np.ndarray, s: np.ndarray) -> tuple:
     c = np.zeros(np.shape(s))
     df = f[1] - f[0]
     q = np.fft.rfftfreq(2*(len(f) - 1), df)
-    # eps = np.finfo(float).eps
-    # c = np.fft.irfft(np.log(np.abs(s) + eps), axis=-2)
     c = np.fft.irfft(np.log(np.abs(s)), axis=-2)
     c = c[..., :len(q),:]
+
     return t, q, c
 
 def get_demodulated_samples(samples: np.ndarray, fs: float, demodulation_boundaries: list) -> tuple:
@@ -91,14 +91,14 @@ def get_demodulated_samples(samples: np.ndarray, fs: float, demodulation_boundar
 
     current_fs = fs
     filtered = np.copy(samples)
-
-    while (current_fs / 2) / fmax > 4:
-        filtered = sp.decimate(filtered.ravel(), 4)
+    order = 4
+    while (current_fs / 2) > fmax * 4:
+        filtered = decimate(filtered.ravel(), 4, ftype='fir')
         current_fs /= 4
 
     if demodulation_boundaries[0] > 0:
         # Bandpass filtering
-        b, a = sp.butter(8, demodulation_boundaries, 'bandpass', fs=current_fs)
+        b, a = sp.butter(order, demodulation_boundaries, 'bandpass', fs=current_fs)
         filtered = sp.filtfilt(b, a, filtered, padlen=150)
 
         # Demodulation step
@@ -106,19 +106,18 @@ def get_demodulated_samples(samples: np.ndarray, fs: float, demodulation_boundar
         filtered = np.real(filtered) * np.cos(2 * np.pi * demodulation_boundaries[0] * time_band)
 
         # Lowpass filter
-        b, a = sp.butter(8, band_width, 'lowpass', fs=current_fs)
+        b, a = sp.butter(order, band_width, 'lowpass', fs=current_fs)
         filtered = sp.filtfilt(b, a, filtered)
     else:
         # Lowpass filter
-        b, a = sp.butter(8, band_width, 'lowpass', fs=current_fs)
+        b, a = sp.butter(order, band_width, 'lowpass', fs=current_fs)
         filtered = sp.filtfilt(b, a, filtered)
+
     # Resample
-    demodulated_samples = sp.resample(filtered, int(len(filtered) / (current_fs / new_fs)))
-    # Lowpass filter
-    b, a = sp.butter(8, band_width, 'lowpass', fs=current_fs)
-    filtered = sp.filtfilt(b, a, filtered)
+    demodulated_samples = resample(filtered, int(len(filtered) / (current_fs / new_fs)))
 
     return demodulated_samples, new_fs
+
 
 def get_spectrogram(audio_data, sample_rate, fftsize, noverlap, integration, demBounds, begin_date, end_date) -> tuple:
     samples = audio_data.files
